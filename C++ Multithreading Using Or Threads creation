@@ -1,0 +1,34 @@
+#include<iostream>
+#include<thread>
+#include<unistd.h>
+using namespace std;
+
+
+void taskA()
+{
+    for(int i = 0; i < 10; i++)
+    {
+        sleep(1);
+        cout<<"Print A: "<<i<<endl;
+    }
+}
+
+void taskB()
+{
+    for(int i = 0; i < 10; i++)
+    {
+        sleep(1);
+        cout<<"Print B: "<<i<<endl;
+      
+    }
+
+}
+int main()
+{
+    thread t1(taskA); //create thread t1 and pass the task name that you wanted to do
+    thread t2(taskB); //another thread to excute tasksB
+
+    t1.join();
+    t2.join();
+    return 0;
+}
