@@ -1,0 +1,57 @@
+
+#include <iostream>
+#include <thread>
+#include <semaphore>
+#include <queue>
+#include <chrono>
+
+using namespace std;
+
+const int BUFFER_SIZE = 5;
+
+queue<int> buffer;
+
+counting_semaphore<5> empty(BUFFER_SIZE);
+counting_semaphore<5> full(0);
+binary_semaphore mutex(1);
+
+void producer() {
+    for (int i = 1; i <= 10; i++) {
+        empty.acquire();  // Wait for an empty slot
+        mutex.acquire();  // Lock the buffer
+
+        buffer.push(i);
+        cout << "Produced: " << i << endl;
+
+        mutex.release(); // Unlock the buffer
+        full.release();   // Increase filled slots
+
+        this_thread::sleep_for(chrono::milliseconds(100));
+    }
+}
+
+void consumer() {
+    for (int i = 1; i <= 10; i++) {
+        full.acquire();   // Wait for an available item
+        mutex.acquire();  // Lock the buffer
+
+        int item = buffer.front();
+        buffer.pop();
+        cout << "Consumed: " << item << endl;
+
+        mutex.release();  // Unlock the buffer
+        empty.release();  // Increase empty slots
+
+        this_thread::sleep_for(chrono::milliseconds(150));
+    }
+}
+
+int main() {
+    thread p(producer);
+    thread c(consumer);
+
+    p.join();
+    c.join();
+
+    return 0;
+}
