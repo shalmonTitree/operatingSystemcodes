@@ -1,0 +1,68 @@
+
+#include <iostream>
+#include <thread>
+#include <semaphore>
+#include <chrono>
+
+using namespace std;
+
+binary_semaphore mutex(1);
+binary_semaphore wrt(1);
+
+int readCount = 0;
+int sharedData = 100;
+
+void reader(int id) {
+    // Entry section
+    mutex.acquire();
+    readCount++;
+
+    if (readCount == 1) {
+        wrt.acquire();  // First reader blocks writers
+    }
+
+    mutex.release();
+
+    // Reading section
+    cout << "Reader " << id
+         << " reads data: " << sharedData << endl;
+
+    this_thread::sleep_for(chrono::milliseconds(100));
+
+    // Exit section
+    mutex.acquire();
+    readCount--;
+
+    if (readCount == 0) {
+        wrt.release();  // Last reader allows writers
+    }
+
+    mutex.release();
+}
+
+void writer(int id) {
+    wrt.acquire();  // Exclusive access
+
+    sharedData += 10;
+
+    cout << "Writer " << id
+         << " updates data to: " << sharedData << endl;
+
+    this_thread::sleep_for(chrono::milliseconds(100));
+
+    wrt.release();
+}
+
+int main() {
+    thread r1(reader, 1);
+    thread r2(reader, 2);
+    thread w1(writer, 1);
+    thread r3(reader, 3);
+
+    r1.join();
+    r2.join();
+    w1.join();
+    r3.join();
+
+    return 0;
+}
