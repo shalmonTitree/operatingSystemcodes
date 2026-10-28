@@ -1,0 +1,28 @@
+#include <iostream>
+#include <semaphore>
+#include <thread>
+using namespace std;
+
+binary_semaphore S(1);
+
+void work(int id) {
+    S.acquire();  // wait()
+
+    cout << "Thread " << id
+         << " entered critical section\n";
+
+    cout << "Thread " << id
+         << " leaving critical section\n";
+
+    S.release();  // signal()
+}
+
+int main() {
+    thread t1(work, 1);
+    thread t2(work, 2);
+
+    t1.join();
+    t2.join();
+
+    return 0;
+}
