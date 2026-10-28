@@ -1,0 +1,54 @@
+
+#include <iostream>
+#include <thread>
+#include <semaphore>
+#include <chrono>
+using namespace std;
+
+const int N = 5;
+
+binary_semaphore forks[N] = {
+    binary_semaphore(1),
+    binary_semaphore(1),
+    binary_semaphore(1),
+    binary_semaphore(1),
+    binary_semaphore(1)
+};
+
+// Allow at most 4 philosophers to compete for forks
+counting_semaphore<4> room(4);
+
+void philosopher(int id) {
+    for (int i = 0; i < 2; i++) {
+        cout << "Philosopher " << id << " is thinking\n";
+        this_thread::sleep_for(chrono::milliseconds(100));
+
+        room.acquire();
+
+        forks[id].acquire();           // Pick up left fork
+        forks[(id + 1) % N].acquire(); // Pick up right fork
+
+        cout << "Philosopher " << id << " is eating\n";
+        this_thread::sleep_for(chrono::milliseconds(100));
+
+        forks[(id + 1) % N].release(); // Put down right fork
+        forks[id].release();           // Put down left fork
+
+        room.release();
+    }
+}
+
+int main() {
+    thread p[N];
+
+    for (int i = 0; i < N; i++) {
+        p[i] = thread(philosopher, i);
+    }
+
+    for (int i = 0; i < N; i++) {
+        p[i].join();
+    }
+
+    cout << "All philosophers finished eating\n";
+    return 0;
+}
